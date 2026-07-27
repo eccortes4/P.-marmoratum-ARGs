@@ -23,5 +23,5 @@ echo "Merging files back into one"
 echo
 
 ls /space/s1/eccortes/frogs/beagle_41_out | grep inp > ~/Frog_ARGS/scripts/files.txt
-bcftools merge --file-list files.txt -Oz -o ~/Frog_ARGs/beagle_out/called.vcf.gz
+bcftools merge --file-list ~/Frog_ARGS/scripts/files.txt -Oz -o ~/Frog_ARGs/beagle_out/called.vcf.gz
 
