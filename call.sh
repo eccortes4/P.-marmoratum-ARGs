@@ -26,5 +26,6 @@ echo "Merging files back into one"
 echo
 
 cd /space/s1/eccortes/frogs/beagle_41_out/
-ls | grep .vcf.gzbto > ~/Fog_ARGS/scripts/files.txt
-bcftools merge --file-list ~/Fog_ARGS/scripts/files.txt -Oz -o /home/eccortes/Frog_ARGs/beagle_out/called.vcf.gz
+ls | grep .vcf.gz > ~/Frog_ARGs/scripts/files.txt
+parallel -j 12 -a ~/Frog_ARGs/scripts/files.txt bcftools index {}
+bcftools concat --file-list ~/Frog_ARGs/scripts/files.txt -Oz -o /home/eccortes/Frog_ARGs/beagle_out/called.gt.vcf.gz
