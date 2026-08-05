@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
 # Running beagle for genotype calling, imputation, and phasing
+# Running beagle for genotype calling, imputation, and phasing
 
 echo
 echo "***Running genotype calling***"
 echo
 
-DATA="/space/s1/eccortes/frogs/working/var_sites.vcf.gz"
+# Directory for holding large amounts of data
+DATA="/space/s1/eccortes/frogs"
+# Directory for scripts and final outputs
+WORKING="/home/eccortes/Frog_ARGs"
 
 # Using parallel for faster run times
 # Using niterations=0 to avoid using 4.1 phasing algo
 # Using 11 threads is good enough and increasing will slow down performance
 
-parallel -j 12 -a ./input_text/Scaffolds.txt \
+parallel -j 12 -a ./input_text/scaffolds.txt \
 "java -Xss5m -Xmx80g -jar ~/local/beagle.4.1.jar \
-gl=$DATA \
-out=/space/s1/eccortes/frogs/beagle_41_out/called.{}.gt \
+gl=$DATA/working/var_sites.vcf.gz \
+out=$DATA/beagle_41_out/called.{}.gt \
 chrom={} \
 niterations=0 \
 gprobs=true \
@@ -25,13 +29,13 @@ echo
 echo "Merging files back into one"
 echo
 
-cd /space/s1/frogs/beagle_41_out/
-ls -d "$PWD"/* | grep .vcf.gz > ~/Frog_ARGs/scripts/input_text/test.txt
+cd $DATA/beagle_41_out/
+ls | grep .vcf.gz > ~/Frog_ARGs/scripts/input_text/called_files.txt
 
-parallel -j 12 -a ~/Frog_ARGs/scripts/input_text/files.txt bcftools index {}
+parallel -j 12 -a ~/Frog_ARGs/scripts/input_text/called_files.txt bcftools index {}
 
-bcftools concat --file-list ~/Frog_ARGs/scripts/input_text/test.txt -Oz \
-"-o /home/eccortes/Frog_ARGs/beagle_out/test.gt.vcf.gz"
+bcftools concat --file-list ~/Frog_ARGs/scripts/input_text/called_files.txt -Oz \
+"-o /home/eccortes/Frog_ARGs/beagle_out/called.gt.vcf.gz"
 
 cd ~/Frog_ARGs/scripts
 
@@ -46,9 +50,9 @@ INPUT="~/Frog_ARGs/beagle_out/called.gt.vcf.gz"
 # better accuracy
 
 
-parallel -j 12 -a Scaffolds.txt "java -Xmx60g -jar ~/local/beagle.5.5.jar \
+parallel -j 12 -a scaffolds.txt "java -Xmx60g -jar ~/local/beagle.5.5.jar \
 gt=$INPUT \
-out=/space/s1/eccortes/frogs/beagle_55_out/phase.{}.gt \
+out=$DATA/beagle_55_out/phase.{}.gt \
 chrom={} \
 nthreads=11"
 
@@ -59,8 +63,8 @@ echo
 
 cd ~/Frog_ARGs/scripts
 
-ls /space/s1/eccortes/frogs/beagle_55_out/ | grep .vcf.gz > ~/Frog_ARGs/scripts/input_text/phase_files.txt
-cd /space/s1/eccortes/frogs/beagle_55_out/
+ls $DATA/beagle_55_out/ | grep .vcf.gz > ~/Frog_ARGs/scripts/input_text/phase_files.txt
+cd $DATA/beagle_55_out/
 parallel -j 12 -a ~/Frog_ARGs/scripts/input_text/phase_files.txt bcftools index {}
 bcftools concat --file-list ~/Frog_ARGs/scripts/input_text/phase_files.txt -Oz \
 "-o /home/eccortes/Frog_ARGs/beagle_out/phased.gt.vcf.gz"
@@ -72,5 +76,5 @@ echo
 bcftools index ~/Frog_ARGs/beagle_out/phased.gt.vcf.gz
 
 bcftools view -Oz -o ~/Frog_ARGs/beagle_out/filtered.gt.vcf.gz \
---regions-file Filtered.txt \
+--regions-file filtered.txt \
 ~/Frog_ARGs/beagle_out/phased.gt.vcf.gz
